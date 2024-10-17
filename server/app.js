@@ -5,10 +5,17 @@ const path = require("path");
 const FormData = require("./model/form");
 const hbs = require("hbs");
 const bcryptjs = require("bcryptjs");
-require('dotenv').config();
+const jwt = require("jsonwebtoken");
+require("dotenv").config();
+const cookieParser = require("cookie-parser");
+const auth = require("../server/middleware/auth");
+const { clear } = require("console");
+
 const port = process.env.PORT || 3000;
 app.use(express.json());
 app.use(express.urlencoded({ extended: false }));
+app.use(cookieParser());
+
 // static path surved
 const staticPath = path.join(__dirname, "../client");
 const viewsPath = path.join(__dirname, "../client/templates/views");
@@ -23,11 +30,34 @@ hbs.registerPartials(partialsPath);
 app.get("/", async (req, res) => {
   res.render("home");
 });
+app.get("/secret", auth, async (req, res) => {
+  console.log(`this is secret tocken ${req.cookies.jwt}`);
+  res.render("secret");
+});
 app.get("/registration", async (req, res) => {
   res.render("index");
 });
 app.get("/login", async (req, res) => {
   res.render("login");
+});
+app.get("/logout", auth, async (req, res) => {
+  try {
+    // for single logout
+    // req.user.tokens = req.user.tokens.filter((currElement) => {
+    //   return currElement.token != req.token;
+    // });
+
+    // logout from all devices
+    req.user.tokens = [];
+    
+
+    res.clearCookie("jwt");
+    console.log("logout successfully");
+    await req.user.save();
+    res.render("login");
+  } catch (error) {
+    res.status(500).send(error);
+  }
 });
 app.listen(port, () => {
   console.log(`listen from port ${port}`);
@@ -49,9 +79,6 @@ app.post("/registration", async (req, res) => {
         phone: req.body.phone,
       });
 
-      // authentication
-      const token=await data.generatAuthToken();
-
       const saveData = await data.save();
       res.status(201).render("index");
     } else {
@@ -69,7 +96,16 @@ app.post("/login", async (req, res) => {
     const password = req.body.password;
     const userEmail = await FormData.findOne({ email: email });
     const match = await bcryptjs.compare(password, userEmail.password);
+
     if (match) {
+      // Generate authentication token
+      const token = await userEmail.generatAuthToken();
+
+      // Store the token in cookies
+      res.cookie("jwt", token, {
+        expires: new Date(Date.now() + 900000), // 15 minutes
+        httpOnly: true,
+      });
       res.render("home");
     } else {
       res.send("password not match");
@@ -80,8 +116,6 @@ app.post("/login", async (req, res) => {
     res.status(400).send("invalid email");
   }
 });
-
-console.log(process.env.SECRET_KEY);
 
 // database connection
 const databaseConnection = async () => {
