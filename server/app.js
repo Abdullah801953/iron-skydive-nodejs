@@ -120,7 +120,7 @@ app.post("/login", async (req, res) => {
 // database connection
 const databaseConnection = async () => {
   try {
-    await mongoose.connect("mongodb://localhost:27017/Registration");
+    await mongoose.connect("mongodb+srv://abdul:abdul@cluster0.w9yltqg.mongodb.net/forms?retryWrites=true&w=majority&appName=Cluster0");
     console.log("connected to databse");
   } catch (err) {
     console.log("failed to connect with database", err);
