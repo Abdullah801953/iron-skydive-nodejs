@@ -118,17 +118,17 @@ app.post("/login", async (req, res) => {
 });
 
 // database connection
+
 const databaseConnection = async () => {
   try {
-    if (!mongoose.connection.readyState) { // Check if already connected
-      await mongoose.connect(
-        "mongodb+srv://abdul:abdul@cluster0.w9yltqg.mongodb.net/forms?retryWrites=true&w=majority&appName=Cluster0"
-      );
+    if (mongoose.connection.readyState === 0) {
+      await mongoose.connect(process.env.MONGODB_URI);
       console.log("Connected to the database.");
     }
   } catch (err) {
-    console.error("Failed to connect with database", err);
+    console.error("Failed to connect to the database:", err);
+    throw err; // Taaki errors clearly visible ho
   }
 };
 
-databaseConnection(); // Server start hote hi ek baar call karo
+databaseConnection();
