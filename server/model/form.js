@@ -29,9 +29,7 @@ const formSchema = new mongoose.Schema({
     required: true,
   },
   phone: {
-    type: Number,
-    required: true,
-    unique: true,
+    type: Number
   },
   tokens: [
     {
